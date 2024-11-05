@@ -32,5 +32,7 @@ func Connect() (*pgx.Conn, error) {
 		return nil, err
 	}
 
+	slog.Info("Connected to DB")
+
 	return connect, nil
 }

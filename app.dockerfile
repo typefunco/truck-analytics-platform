@@ -22,3 +22,7 @@ CMD ["./analytics-platform"]
 
 
 # For db - pg_dump -U postgres -h localhost -p 5432 -d truck-analytics > data_dump.sql
+
+#FROM postgres:14
+
+#COPY data_dump.sql /docker-entrypoint-initdb.d/
