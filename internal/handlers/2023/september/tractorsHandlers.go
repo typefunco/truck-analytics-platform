@@ -2,7 +2,6 @@ package september
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"truck-analytics-platform/internal/db"
@@ -26,10 +25,10 @@ func NineMonth2023Tractors4x2(ctx *gin.Context) {
 		TOTAL      int    `json:"total"`
 	}
 
-	// TruckAnalyticsResponse wraps the response data
+	// Создаем структуру для ответа
 	type TruckAnalyticsResponse struct {
-		Data  []TruckAnalytics `json:"data"`
-		Error string           `json:"error,omitempty"`
+		Data  map[string][]TruckAnalytics `json:"data"`
+		Error string                      `json:"error,omitempty"`
 	}
 
 	query := `
@@ -66,6 +65,7 @@ func NineMonth2023Tractors4x2(ctx *gin.Context) {
 			SELECT * FROM federal_totals
 		)
 		SELECT 
+			"Federal_district",
 			COALESCE("Region", "Federal_district") as Region_name,
 			MAX(CASE WHEN "Brand" = 'DONGFENG' THEN total_sales END) as DONGFENG,
 			MAX(CASE WHEN "Brand" = 'FAW' THEN total_sales END) as FAW,
@@ -90,11 +90,11 @@ func NineMonth2023Tractors4x2(ctx *gin.Context) {
 				ELSE 0 
 			END,
 			"Region"
-		`
+	`
 
 	db, err := db.Connect()
 	if err != nil {
-		slog.Warn("Can't get data from db")
+		slog.Warn("Can't connect to database")
 		return
 	}
 
@@ -103,15 +103,21 @@ func NineMonth2023Tractors4x2(ctx *gin.Context) {
 		response := TruckAnalyticsResponse{
 			Error: "Failed to execute query: " + err.Error(),
 		}
-		json.NewEncoder(ctx.Writer).Encode(response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 	defer rows.Close()
 
-	var results []TruckAnalytics
+	// Map для группировки данных по федеральным округам
+	dataByDistrict := make(map[string][]TruckAnalytics)
+
+	// Читаем строки результатов и группируем по федеральным округам
 	for rows.Next() {
 		var ta TruckAnalytics
+		var federalDistrict string
+
 		err := rows.Scan(
+			&federalDistrict,
 			&ta.RegionName,
 			&ta.DONGFENG,
 			&ta.FAW,
@@ -125,24 +131,26 @@ func NineMonth2023Tractors4x2(ctx *gin.Context) {
 			response := TruckAnalyticsResponse{
 				Error: "Failed to scan row: " + err.Error(),
 			}
-			json.NewEncoder(ctx.Writer).Encode(response)
+			ctx.JSON(http.StatusInternalServerError, response)
 			return
 		}
-		results = append(results, ta)
+
+		// Добавляем данные региона в соответствующий федеральный округ
+		dataByDistrict[federalDistrict] = append(dataByDistrict[federalDistrict], ta)
 	}
 
-	// Check for errors from iterating over rows
+	// Проверка на ошибки при итерации по строкам
 	if err := rows.Err(); err != nil {
 		response := TruckAnalyticsResponse{
 			Error: "Error iterating over rows: " + err.Error(),
 		}
-		json.NewEncoder(ctx.Writer).Encode(response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	// Send the response
+	// Отправляем ответ
 	response := TruckAnalyticsResponse{
-		Data: results,
+		Data: dataByDistrict,
 	}
 	ctx.JSON(http.StatusOK, response)
 }
@@ -159,10 +167,10 @@ func NineMonth2023Tractors6x4(ctx *gin.Context) {
 		TOTAL      int    `json:"total"`
 	}
 
-	// TruckAnalyticsResponse wraps the response data
+	// TruckAnalyticsResponse structure for wrapping the response data
 	type TruckAnalyticsResponse struct {
-		Data  []TruckAnalytics `json:"data"`
-		Error string           `json:"error,omitempty"`
+		Data  map[string][]TruckAnalytics `json:"data"`
+		Error string                      `json:"error,omitempty"`
 	}
 
 	query := `
@@ -199,6 +207,7 @@ func NineMonth2023Tractors6x4(ctx *gin.Context) {
 			SELECT * FROM federal_totals
 		)
 		SELECT 
+			"Federal_district",
 			COALESCE("Region", "Federal_district") as Region_name,
 			MAX(CASE WHEN "Brand" = 'DONGFENG' THEN total_sales END) as DONGFENG,
 			MAX(CASE WHEN "Brand" = 'FAW' THEN total_sales END) as FAW,
@@ -223,11 +232,11 @@ func NineMonth2023Tractors6x4(ctx *gin.Context) {
 				ELSE 0 
 			END,
 			"Region"
-		`
+	`
 
 	db, err := db.Connect()
 	if err != nil {
-		slog.Warn("Can't get data from db")
+		slog.Warn("Can't connect to database")
 		return
 	}
 
@@ -236,15 +245,21 @@ func NineMonth2023Tractors6x4(ctx *gin.Context) {
 		response := TruckAnalyticsResponse{
 			Error: "Failed to execute query: " + err.Error(),
 		}
-		json.NewEncoder(ctx.Writer).Encode(response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 	defer rows.Close()
 
-	var results []TruckAnalytics
+	// Map for grouping data by federal district
+	dataByDistrict := make(map[string][]TruckAnalytics)
+
+	// Process query results and group by federal district
 	for rows.Next() {
 		var ta TruckAnalytics
+		var federalDistrict string
+
 		err := rows.Scan(
+			&federalDistrict,
 			&ta.RegionName,
 			&ta.DONGFENG,
 			&ta.FAW,
@@ -258,10 +273,12 @@ func NineMonth2023Tractors6x4(ctx *gin.Context) {
 			response := TruckAnalyticsResponse{
 				Error: "Failed to scan row: " + err.Error(),
 			}
-			json.NewEncoder(ctx.Writer).Encode(response)
+			ctx.JSON(http.StatusInternalServerError, response)
 			return
 		}
-		results = append(results, ta)
+
+		// Append the region data to the corresponding federal district
+		dataByDistrict[federalDistrict] = append(dataByDistrict[federalDistrict], ta)
 	}
 
 	// Check for errors from iterating over rows
@@ -269,13 +286,13 @@ func NineMonth2023Tractors6x4(ctx *gin.Context) {
 		response := TruckAnalyticsResponse{
 			Error: "Error iterating over rows: " + err.Error(),
 		}
-		json.NewEncoder(ctx.Writer).Encode(response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	// Send the response
 	response := TruckAnalyticsResponse{
-		Data: results,
+		Data: dataByDistrict,
 	}
 	ctx.JSON(http.StatusOK, response)
 }

@@ -29,21 +29,20 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 	query := `
 		WITH base_data AS (
 			SELECT 
-				truck_analytics_2023_01_12."Federal_district",
-				truck_analytics_2023_01_12."Region",
-				truck_analytics_2023_01_12."Brand",
-				SUM(truck_analytics_2023_01_12."Quantity") as total_sales
-			FROM truck_analytics_2023_01_12
+				truck_analytics_2024_01_09."Federal_district",
+				truck_analytics_2024_01_09."Region",
+				truck_analytics_2024_01_09."Brand",
+				SUM(truck_analytics_2024_01_09."Quantity") as total_sales
+			FROM truck_analytics_2024_01_09
 			WHERE 
-				truck_analytics_2023_01_12."Wheel_formula" = '6x4'
-				AND truck_analytics_2023_01_12."Brand" IN ('FAW', 'HOWO', 'JAC', 'SANY', 'SITRAK')
-				AND truck_analytics_2023_01_12."Month_of_registration" <= 9
-				AND truck_analytics_2023_01_12."Body_type" = 'Самосвал'
-				AND truck_analytics_2023_01_12."Mass_in_segment_1" = '32001-40000'
+				truck_analytics_2024_01_09."Wheel_formula" = '6x4'
+				AND truck_analytics_2024_01_09."Brand" IN ('FAW', 'HOWO', 'JAC', 'SANY', 'SITRAK')
+				AND truck_analytics_2024_01_09."Body_type" = 'Самосвал'
+				AND truck_analytics_2024_01_09."Mass_in_segment_1" = '32001-40000'
 			GROUP BY 
-				truck_analytics_2023_01_12."Federal_district", 
-				truck_analytics_2023_01_12."Region", 
-				truck_analytics_2023_01_12."Brand"
+				truck_analytics_2024_01_09."Federal_district", 
+				truck_analytics_2024_01_09."Region", 
+				truck_analytics_2024_01_09."Brand"
 		),
 		federal_totals AS (
 			SELECT 
@@ -166,21 +165,20 @@ func NineMonth2023Dumpers8x4(ctx *gin.Context) {
 	query := `
 		WITH base_data AS (
 			SELECT 
-				truck_analytics_2023_01_12."Federal_district",
-				truck_analytics_2023_01_12."Region",
-				truck_analytics_2023_01_12."Brand",
-				SUM(truck_analytics_2023_01_12."Quantity") as total_sales
-			FROM truck_analytics_2023_01_12
+				truck_analytics_2024_01_09."Federal_district",
+				truck_analytics_2024_01_09."Region",
+				truck_analytics_2024_01_09."Brand",
+				SUM(truck_analytics_2024_01_09."Quantity") as total_sales
+			FROM truck_analytics_2024_01_09
 			WHERE 
-				truck_analytics_2023_01_12."Wheel_formula" = '8x4'
-				AND truck_analytics_2023_01_12."Brand" IN ('FAW', 'HOWO', 'SHACMAN', 'SITRAK')
-				AND truck_analytics_2023_01_12."Month_of_registration" <= 9
-				AND truck_analytics_2023_01_12."Body_type" = 'Самосвал'
-				AND truck_analytics_2023_01_12."Weight_in_segment_4" = '35001-45000'
+				truck_analytics_2024_01_09."Wheel_formula" = '8x4'
+				AND truck_analytics_2024_01_09."Brand" IN ('FAW', 'HOWO', 'SHACMAN', 'SITRAK')
+				AND truck_analytics_2024_01_09."Body_type" = 'Самосвал'
+				AND truck_analytics_2024_01_09."Weight_in_segment_4" = '35001-45000'
 			GROUP BY 
-				truck_analytics_2023_01_12."Federal_district", 
-				truck_analytics_2023_01_12."Region", 
-				truck_analytics_2023_01_12."Brand"
+				truck_analytics_2024_01_09."Federal_district", 
+				truck_analytics_2024_01_09."Region", 
+				truck_analytics_2024_01_09."Brand"
 		),
 		federal_totals AS (
 			SELECT 

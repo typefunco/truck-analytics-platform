@@ -9,18 +9,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NineMonth2023Dumpers6x4(ctx *gin.Context) {
+func Home(ctx *gin.Context) {
+	ctx.JSON(200, "Cool")
+}
+
+func NineMonth2023Tractors4x2(ctx *gin.Context) {
 	type TruckAnalytics struct {
 		RegionName string `json:"region_name"`
+		DONGFENG   *int   `json:"dongfeng"`
 		FAW        *int   `json:"faw"`
-		HOWO       *int   `json:"howo"`
+		FOTON      *int   `json:"foton"`
 		JAC        *int   `json:"jac"`
-		SANY       *int   `json:"sany"`
+		SHACMAN    *int   `json:"shacman"`
 		SITRAK     *int   `json:"sitrak"`
 		TOTAL      int    `json:"total"`
 	}
 
-	// TruckAnalyticsResponse structure for wrapping the response data
+	// Создаем структуру для ответа
 	type TruckAnalyticsResponse struct {
 		Data  map[string][]TruckAnalytics `json:"data"`
 		Error string                      `json:"error,omitempty"`
@@ -29,21 +34,20 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 	query := `
 		WITH base_data AS (
 			SELECT 
-				truck_analytics_2023_01_12."Federal_district",
-				truck_analytics_2023_01_12."Region",
-				truck_analytics_2023_01_12."Brand",
-				SUM(truck_analytics_2023_01_12."Quantity") as total_sales
-			FROM truck_analytics_2023_01_12
+				truck_analytics_2024_01_09."Federal_district",
+				truck_analytics_2024_01_09."Region",
+				truck_analytics_2024_01_09."Brand",
+				SUM(truck_analytics_2024_01_09."Quantity") as total_sales
+			FROM truck_analytics_2024_01_09
 			WHERE 
-				truck_analytics_2023_01_12."Wheel_formula" = '6x4'
-				AND truck_analytics_2023_01_12."Brand" IN ('FAW', 'HOWO', 'JAC', 'SANY', 'SITRAK')
-				AND truck_analytics_2023_01_12."Month_of_registration" <= 9
-				AND truck_analytics_2023_01_12."Body_type" = 'Самосвал'
-				AND truck_analytics_2023_01_12."Mass_in_segment_1" = '32001-40000'
+				truck_analytics_2024_01_09."Wheel_formula" = '4x2'
+				AND truck_analytics_2024_01_09."Brand" IN ('DONGFENG', 'FAW', 'FOTON', 'JAC', 'SHACMAN', 'SITRAK')
+				AND truck_analytics_2024_01_09."Body_type" = 'Седельный тягач'
+				AND truck_analytics_2024_01_09."Exact_mass" = 18000
 			GROUP BY 
-				truck_analytics_2023_01_12."Federal_district", 
-				truck_analytics_2023_01_12."Region", 
-				truck_analytics_2023_01_12."Brand"
+				truck_analytics_2024_01_09."Federal_district", 
+				truck_analytics_2024_01_09."Region", 
+				truck_analytics_2024_01_09."Brand"
 		),
 		federal_totals AS (
 			SELECT 
@@ -62,15 +66,17 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 		SELECT 
 			"Federal_district",
 			COALESCE("Region", "Federal_district") as Region_name,
+			MAX(CASE WHEN "Brand" = 'DONGFENG' THEN total_sales END) as DONGFENG,
 			MAX(CASE WHEN "Brand" = 'FAW' THEN total_sales END) as FAW,
-			MAX(CASE WHEN "Brand" = 'HOWO' THEN total_sales END) as HOWO,
+			MAX(CASE WHEN "Brand" = 'FOTON' THEN total_sales END) as FOTON,
 			MAX(CASE WHEN "Brand" = 'JAC' THEN total_sales END) as JAC,
-			MAX(CASE WHEN "Brand" = 'SANY' THEN total_sales END) as SANY,
+			MAX(CASE WHEN "Brand" = 'SHACMAN' THEN total_sales END) as SHACMAN,
 			MAX(CASE WHEN "Brand" = 'SITRAK' THEN total_sales END) as SITRAK,
+			COALESCE(MAX(CASE WHEN "Brand" = 'DONGFENG' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'FAW' THEN total_sales END), 0) +
-			COALESCE(MAX(CASE WHEN "Brand" = 'HOWO' THEN total_sales END), 0) +
+			COALESCE(MAX(CASE WHEN "Brand" = 'FOTON' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'JAC' THEN total_sales END), 0) +
-			COALESCE(MAX(CASE WHEN "Brand" = 'SANY' THEN total_sales END), 0) +
+			COALESCE(MAX(CASE WHEN "Brand" = 'SHACMAN' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'SITRAK' THEN total_sales END), 0) as TOTAL
 		FROM combined_data
 		GROUP BY 
@@ -101,10 +107,10 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 	}
 	defer rows.Close()
 
-	// Map for grouping data by federal district
+	// Map для группировки данных по федеральным округам
 	dataByDistrict := make(map[string][]TruckAnalytics)
 
-	// Process query results and group by federal district
+	// Читаем строки результатов и группируем по федеральным округам
 	for rows.Next() {
 		var ta TruckAnalytics
 		var federalDistrict string
@@ -112,10 +118,11 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 		err := rows.Scan(
 			&federalDistrict,
 			&ta.RegionName,
+			&ta.DONGFENG,
 			&ta.FAW,
-			&ta.HOWO,
+			&ta.FOTON,
 			&ta.JAC,
-			&ta.SANY,
+			&ta.SHACMAN,
 			&ta.SITRAK,
 			&ta.TOTAL,
 		)
@@ -127,11 +134,11 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 			return
 		}
 
-		// Append the region data to the corresponding federal district
+		// Добавляем данные региона в соответствующий федеральный округ
 		dataByDistrict[federalDistrict] = append(dataByDistrict[federalDistrict], ta)
 	}
 
-	// Check for errors from iterating over rows
+	// Проверка на ошибки при итерации по строкам
 	if err := rows.Err(); err != nil {
 		response := TruckAnalyticsResponse{
 			Error: "Error iterating over rows: " + err.Error(),
@@ -140,17 +147,19 @@ func NineMonth2023Dumpers6x4(ctx *gin.Context) {
 		return
 	}
 
-	// Send the response
+	// Отправляем ответ
 	response := TruckAnalyticsResponse{
 		Data: dataByDistrict,
 	}
 	ctx.JSON(http.StatusOK, response)
 }
 
-func NineMonth2023Dumpers8x4(ctx *gin.Context) {
+func NineMonth2023Tractors6x4(ctx *gin.Context) {
 	type TruckAnalytics struct {
 		RegionName string `json:"region_name"`
+		DONGFENG   *int   `json:"dongfeng"`
 		FAW        *int   `json:"faw"`
+		FOTON      *int   `json:"foton"`
 		HOWO       *int   `json:"howo"`
 		SHACMAN    *int   `json:"shacman"`
 		SITRAK     *int   `json:"sitrak"`
@@ -166,21 +175,20 @@ func NineMonth2023Dumpers8x4(ctx *gin.Context) {
 	query := `
 		WITH base_data AS (
 			SELECT 
-				truck_analytics_2023_01_12."Federal_district",
-				truck_analytics_2023_01_12."Region",
-				truck_analytics_2023_01_12."Brand",
-				SUM(truck_analytics_2023_01_12."Quantity") as total_sales
-			FROM truck_analytics_2023_01_12
+				truck_analytics_2024_01_09."Federal_district",
+				truck_analytics_2024_01_09."Region",
+				truck_analytics_2024_01_09."Brand",
+				SUM(truck_analytics_2024_01_09."Quantity") as total_sales
+			FROM truck_analytics_2024_01_09
 			WHERE 
-				truck_analytics_2023_01_12."Wheel_formula" = '8x4'
-				AND truck_analytics_2023_01_12."Brand" IN ('FAW', 'HOWO', 'SHACMAN', 'SITRAK')
-				AND truck_analytics_2023_01_12."Month_of_registration" <= 9
-				AND truck_analytics_2023_01_12."Body_type" = 'Самосвал'
-				AND truck_analytics_2023_01_12."Weight_in_segment_4" = '35001-45000'
+				truck_analytics_2024_01_09."Wheel_formula" = '6x4'
+				AND truck_analytics_2024_01_09."Brand" IN ('DONGFENG', 'FAW', 'FOTON', 'HOWO', 'SHACMAN', 'SITRAK')
+				AND truck_analytics_2024_01_09."Body_type" = 'Седельный тягач'
+				AND truck_analytics_2024_01_09."Exact_mass" = 25000
 			GROUP BY 
-				truck_analytics_2023_01_12."Federal_district", 
-				truck_analytics_2023_01_12."Region", 
-				truck_analytics_2023_01_12."Brand"
+				truck_analytics_2024_01_09."Federal_district", 
+				truck_analytics_2024_01_09."Region", 
+				truck_analytics_2024_01_09."Brand"
 		),
 		federal_totals AS (
 			SELECT 
@@ -199,11 +207,15 @@ func NineMonth2023Dumpers8x4(ctx *gin.Context) {
 		SELECT 
 			"Federal_district",
 			COALESCE("Region", "Federal_district") as Region_name,
+			MAX(CASE WHEN "Brand" = 'DONGFENG' THEN total_sales END) as DONGFENG,
 			MAX(CASE WHEN "Brand" = 'FAW' THEN total_sales END) as FAW,
+			MAX(CASE WHEN "Brand" = 'FOTON' THEN total_sales END) as FOTON,
 			MAX(CASE WHEN "Brand" = 'HOWO' THEN total_sales END) as HOWO,
 			MAX(CASE WHEN "Brand" = 'SHACMAN' THEN total_sales END) as SHACMAN,
 			MAX(CASE WHEN "Brand" = 'SITRAK' THEN total_sales END) as SITRAK,
+			COALESCE(MAX(CASE WHEN "Brand" = 'DONGFENG' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'FAW' THEN total_sales END), 0) +
+			COALESCE(MAX(CASE WHEN "Brand" = 'FOTON' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'HOWO' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'SHACMAN' THEN total_sales END), 0) +
 			COALESCE(MAX(CASE WHEN "Brand" = 'SITRAK' THEN total_sales END), 0) as TOTAL
@@ -247,7 +259,9 @@ func NineMonth2023Dumpers8x4(ctx *gin.Context) {
 		err := rows.Scan(
 			&federalDistrict,
 			&ta.RegionName,
+			&ta.DONGFENG,
 			&ta.FAW,
+			&ta.FOTON,
 			&ta.HOWO,
 			&ta.SHACMAN,
 			&ta.SITRAK,
